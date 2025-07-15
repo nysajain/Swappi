@@ -59,6 +59,7 @@ Download GoogleService-Info.plist
 Drag and drop it into your Xcode project (in the main target)
 
 4. 📦 Install Firebase SDK (via Swift Package Manager)
+
 In Xcode:
 File > Add Packages...
 Paste this URL:
