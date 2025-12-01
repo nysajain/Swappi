@@ -1,47 +1,48 @@
 import SwiftUI
 import FirebaseAuth
+import FirebaseFirestore
 
 struct LoginPage: View {
     @Environment(\.presentationMode) var presentationMode
-    @State private var username = ""
+    @State private var email = ""
     @State private var password = ""
     @State private var isPasswordVisible = false
     @AppStorage("isLoggedIn") var isLoggedIn = false
-    
-    
+    @StateObject private var authVM = AuthViewModel()
+
     let cream = Color(red: 0.98, green: 0.96, blue: 0.90)
     let lightBlue = Color(red: 0.75, green: 0.87, blue: 0.95)
     let lightPink = Color(red: 0.96, green: 0.76, blue: 0.85)
     let lightGreen = Color(red: 0.80, green: 0.95, blue: 0.82)
     let darkText = Color(red: 0.25, green: 0.25, blue: 0.35)
-    
+
     var body: some View {
         ZStack {
-            
+
             cream.ignoresSafeArea()
-            
-            
+
+
             ZStack {
-                
+
                 Circle()
                     .fill(lightPink.opacity(0.2))
                     .frame(width: 200, height: 200)
                     .blur(radius: 30)
                     .offset(x: 120, y: -280)
-                
+
                 Circle()
                     .fill(lightBlue.opacity(0.2))
                     .frame(width: 250, height: 250)
                     .blur(radius: 35)
                     .offset(x: -120, y: 350)
-                
+
                 Circle()
                     .fill(lightGreen.opacity(0.15))
                     .frame(width: 180, height: 180)
                     .blur(radius: 25)
                     .offset(x: -100, y: -200)
-                
-                
+
+
                 ForEach(0..<5) { i in
                     Circle()
                         .fill([lightPink, lightBlue, lightGreen][i % 3].opacity(0.3))
@@ -52,8 +53,8 @@ struct LoginPage: View {
                             y: CGFloat.random(in: -300...300)
                         )
                 }
-                
-                
+
+
                 ForEach(0..<20) { i in
                     Circle()
                         .fill([lightPink, lightBlue, lightGreen][i % 3].opacity(0.6))
@@ -65,8 +66,8 @@ struct LoginPage: View {
                         )
                 }
             }
-            
-            
+
+
             VStack {
                 HStack {
                     Button(action: {
@@ -80,8 +81,8 @@ struct LoginPage: View {
                     Spacer()
                 }
                 .padding(.top, 10)
-                
-                
+
+
                 Image("Swappi")
                     .resizable()
                     .scaledToFit()
@@ -90,12 +91,12 @@ struct LoginPage: View {
                     .shadow(color: lightBlue.opacity(0.5), radius: 15, x: -5, y: -5)
                     .padding(.top, 0)
                     .padding(.bottom, -80)
-                
+
                 Spacer()
-                
+
                 VStack(spacing: 20) {
-                    
-                    TextField("Username", text: $username)
+
+                    TextField("Email", text: $email)
                         .padding()
                         .background(Color.white.opacity(0.8))
                         .cornerRadius(15)
@@ -103,13 +104,14 @@ struct LoginPage: View {
                         .foregroundColor(darkText)
                         .disableAutocorrection(true)
                         .textInputAutocapitalization(.none)
+                        .keyboardType(.emailAddress)
                         .overlay(
                             RoundedRectangle(cornerRadius: 15)
-                                .stroke(lightBlue.opacity(username.isEmpty ? 0 : 0.5), lineWidth: 1.5)
+                                .stroke(lightBlue.opacity(email.isEmpty ? 0 : 0.5), lineWidth: 1.5)
                         )
-                        .animation(.easeInOut(duration: 0.2), value: username)
-                    
-                    
+                        .animation(.easeInOut(duration: 0.2), value: email)
+
+
                     HStack {
                         if isPasswordVisible {
                             TextField("Password", text: $password)
@@ -120,7 +122,7 @@ struct LoginPage: View {
                             SecureField("Password", text: $password)
                                 .foregroundColor(darkText)
                         }
-                        
+
                         Button(action: {
                             isPasswordVisible.toggle()
                         }) {
@@ -139,14 +141,29 @@ struct LoginPage: View {
                     .animation(.easeInOut(duration: 0.2), value: password)
                 }
                 .padding(.horizontal, 40)
-                
+
+                if authVM.isLoading {
+                    ProgressView("Signing in...")
+                        .foregroundColor(darkText)
+                        .padding(.top, 10)
+                }
+
+                if let error = authVM.errorMessage {
+                    Text("❌ \(error)")
+                        .foregroundColor(lightPink)
+                        .padding(.vertical, 5)
+                }
+
                 Spacer()
-                
-                
+
+
                 Button(action: {
-                    Auth.auth().signIn(withEmail: username, password: password) { result, error in
-                        if error == nil {
+                    authVM.signIn(email: email, password: password) { result in
+                        switch result {
+                        case .success:
                             isLoggedIn = true
+                        case .failure:
+                            break
                         }
                     }
                 }) {
