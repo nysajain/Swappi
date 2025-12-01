@@ -558,6 +558,7 @@ struct PhotoSectionView: View {
 struct AboutYouPage: View {
     @Environment(\.presentationMode) var presentationMode
     @AppStorage("isLoggedIn") var isLoggedIn = false
+    @AppStorage("hasCompletedProfile") var hasCompletedProfile = true
     
     @State private var images: [UIImage] = []
     @State private var videoURL: URL?
@@ -789,6 +790,7 @@ struct AboutYouPage: View {
             isSavingProfile = false
             switch result {
             case .success():
+                hasCompletedProfile = true
                 isLoggedIn = true
             case .failure(let error):
                 saveError = error.localizedDescription

@@ -3,6 +3,7 @@ import FirebaseAuth
 
 struct SettingsPage: View {
     @AppStorage("isLoggedIn") var isLoggedIn = false
+    @AppStorage("hasCompletedProfile") var hasCompletedProfile = true
     @State private var notificationsEnabled = true
 
     var body: some View {
@@ -39,8 +40,9 @@ struct SettingsPage: View {
     private func logOut() {
         do {
             try Auth.auth().signOut()
-            
+
             isLoggedIn = false
+            hasCompletedProfile = true
         } catch {
             print("❌ Failed to log out: \(error.localizedDescription)")
         }
