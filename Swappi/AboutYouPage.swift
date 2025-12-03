@@ -774,60 +774,39 @@ struct AboutYouPage: View {
             return
         }
         
+        let encodedPhotos = images.compactMap { image in
+            image.jpegData(compressionQuality: 0.8)?.base64EncodedString()
+        }
+
+        guard encodedPhotos.count == images.count else {
+            saveError = "We couldn't process one or more of your photos. Please try re-adding them."
+            return
+        }
+
+        let introMedia = mediaSelection == .audio ? audioURL?.absoluteString : videoURL?.absoluteString
+
         isSavingProfile = true
 
-        FirebaseStorageManager.uploadMultipleImages(images) { uploadedPhotoURLs in
-            guard uploadedPhotoURLs.count == images.count else {
-                DispatchQueue.main.async {
-                    isSavingProfile = false
-                    saveError = "We couldn't upload all of your photos. Please try again with a reliable connection."
-                }
-                return
-            }
-
-            let introSourceURL = mediaSelection == .audio ? audioURL : videoURL
-
-            guard let introSourceURL = introSourceURL else {
-                DispatchQueue.main.async {
-                    isSavingProfile = false
-                    saveError = "Please add either a video or audio"
-                }
-                return
-            }
-
-            FirebaseStorageManager.uploadIntroMedia(fileURL: introSourceURL) { result in
-                switch result {
-                case .success(let introDownloadURL):
-                    let profile = UserProfile(
-                        name: Auth.auth().currentUser?.displayName ?? "",
-                        email: Auth.auth().currentUser?.email ?? "",
-                        skillsKnown: selectedSkills,
-                        skillsWanted: selectedInterests,
-                        vibe: vibeNote,
-                        mood: moodEmoji,
-                        note:"",
-                        profilePhotos: uploadedPhotoURLs,
-                        introMediaURL: introDownloadURL
-                        )
-
-                    profileVM.saveUserProfile(profile: profile) { result in
-                        DispatchQueue.main.async {
-                            isSavingProfile = false
-                            switch result {
-                            case .success():
-                                hasCompletedProfile = true
-                                isLoggedIn = true
-                            case .failure(let error):
-                                saveError = error.localizedDescription
-                            }
-                        }
-                    }
-                case .failure(let error):
-                    DispatchQueue.main.async {
-                        isSavingProfile = false
-                        saveError = "We couldn't upload your intro \(mediaSelection.rawValue). Please try again. (\(error.localizedDescription))"
-                    }
-                }
+        let profile = UserProfile(
+            name: Auth.auth().currentUser?.displayName ?? "",
+            email: Auth.auth().currentUser?.email ?? "",
+            skillsKnown: selectedSkills,
+            skillsWanted: selectedInterests,
+            vibe: vibeNote,
+            mood: moodEmoji,
+            note:"",
+            profilePhotos: encodedPhotos,
+            introMediaURL: introMedia ?? ""
+            )
+        
+        profileVM.saveUserProfile(profile: profile) { result in
+            isSavingProfile = false
+            switch result {
+            case .success():
+                hasCompletedProfile = true
+                isLoggedIn = true
+            case .failure(let error):
+                saveError = error.localizedDescription
             }
         }
     }
