@@ -8,6 +8,7 @@ struct LoginPage: View {
     @State private var password = ""
     @State private var isPasswordVisible = false
     @AppStorage("isLoggedIn") var isLoggedIn = false
+    @AppStorage("hasCompletedProfile") var hasCompletedProfile = true
     @StateObject private var authVM = AuthViewModel()
 
     let cream = Color(red: 0.98, green: 0.96, blue: 0.90)
@@ -161,6 +162,7 @@ struct LoginPage: View {
                     authVM.signIn(email: email, password: password) { result in
                         switch result {
                         case .success:
+                            hasCompletedProfile = true
                             isLoggedIn = true
                         case .failure:
                             break
