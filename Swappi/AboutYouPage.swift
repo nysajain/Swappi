@@ -558,6 +558,7 @@ struct PhotoSectionView: View {
 struct AboutYouPage: View {
     @Environment(\.presentationMode) var presentationMode
     @AppStorage("isLoggedIn") var isLoggedIn = false
+    @AppStorage("hasCompletedProfile") var hasCompletedProfile = true
     
     @State private var images: [UIImage] = []
     @State private var videoURL: URL?
@@ -747,6 +748,8 @@ struct AboutYouPage: View {
 
     
     private func saveProfile() {
+        saveError = nil
+
         guard images.count >= 3,
               selectedSkills.count >= 5,
               selectedInterests.count >= 5,
@@ -771,8 +774,19 @@ struct AboutYouPage: View {
             return
         }
         
+        let encodedPhotos = images.compactMap { image in
+            image.jpegData(compressionQuality: 0.8)?.base64EncodedString()
+        }
+
+        guard encodedPhotos.count == images.count else {
+            saveError = "We couldn't process one or more of your photos. Please try re-adding them."
+            return
+        }
+
+        let introMedia = mediaSelection == .audio ? audioURL?.absoluteString : videoURL?.absoluteString
+
         isSavingProfile = true
-        
+
         let profile = UserProfile(
             name: Auth.auth().currentUser?.displayName ?? "",
             email: Auth.auth().currentUser?.email ?? "",
@@ -781,14 +795,15 @@ struct AboutYouPage: View {
             vibe: vibeNote,
             mood: moodEmoji,
             note:"",
-            profilePhotos: [""],
-            introMediaURL: videoURL?.absoluteString ?? ""
+            profilePhotos: encodedPhotos,
+            introMediaURL: introMedia ?? ""
             )
         
         profileVM.saveUserProfile(profile: profile) { result in
             isSavingProfile = false
             switch result {
             case .success():
+                hasCompletedProfile = true
                 isLoggedIn = true
             case .failure(let error):
                 saveError = error.localizedDescription

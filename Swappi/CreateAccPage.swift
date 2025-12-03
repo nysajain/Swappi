@@ -26,6 +26,7 @@ struct AccPageColors {
 struct CreateAccPage: View {
     @Environment(\.presentationMode) var presentationMode
     @AppStorage("isLoggedIn") var isLoggedIn = false
+    @AppStorage("hasCompletedProfile") var hasCompletedProfile = true
 
     @State private var firstName = ""
     @State private var lastName = ""
@@ -264,6 +265,7 @@ struct CreateAccPage: View {
                     ) { result in
                         switch result {
                         case .success:
+                            hasCompletedProfile = false
                             isLoggedIn = true
                         case .failure:
                             break
