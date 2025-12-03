@@ -748,6 +748,8 @@ struct AboutYouPage: View {
 
     
     private func saveProfile() {
+        saveError = nil
+
         guard images.count >= 3,
               selectedSkills.count >= 5,
               selectedInterests.count >= 5,
@@ -772,8 +774,19 @@ struct AboutYouPage: View {
             return
         }
         
+        let encodedPhotos = images.compactMap { image in
+            image.jpegData(compressionQuality: 0.8)?.base64EncodedString()
+        }
+
+        guard encodedPhotos.count == images.count else {
+            saveError = "We couldn't process one or more of your photos. Please try re-adding them."
+            return
+        }
+
+        let introMedia = mediaSelection == .audio ? audioURL?.absoluteString : videoURL?.absoluteString
+
         isSavingProfile = true
-        
+
         let profile = UserProfile(
             name: Auth.auth().currentUser?.displayName ?? "",
             email: Auth.auth().currentUser?.email ?? "",
@@ -782,8 +795,8 @@ struct AboutYouPage: View {
             vibe: vibeNote,
             mood: moodEmoji,
             note:"",
-            profilePhotos: [""],
-            introMediaURL: videoURL?.absoluteString ?? ""
+            profilePhotos: encodedPhotos,
+            introMediaURL: introMedia ?? ""
             )
         
         profileVM.saveUserProfile(profile: profile) { result in
